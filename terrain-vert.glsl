@@ -13,7 +13,7 @@ layout (std140, binding = 0) uniform matrices
     mat4 modelingMatrix;
     mat4 viewingMatrix;
     mat4 projectionMatrix;
-    //int vertexCount;
+    //uint vertexCount;
     //float terrainSpan;
 };
 

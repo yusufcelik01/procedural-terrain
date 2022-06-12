@@ -96,7 +96,7 @@ struct Face
 
 
 GLuint vertexCount = 1000;
-GLuint terrainSpan = 30;
+GLfloat terrainSpan = 30;
 
 vector<Vertex> gVertices[5];
 vector<Texture> gTextures[5];
@@ -551,16 +551,16 @@ void initUBO()
     glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 
     uboSizes[0] = sizeof(glm::mat4) * 3;//matrices;
-    uboSizes[1] = sizeof(GLfloat) + sizeof(GLuint);//matrices;
+    uboSizes[1] = sizeof(GLuint)*2 + sizeof(GLfloat)*2;//matrices;
 
     glBufferData(GL_UNIFORM_BUFFER, uboSizes[0] + uboSizes[1], 0, GL_DYNAMIC_COPY);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo[0], 0, uboSizes[0]);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo[0], 0, uboSizes[0]+uboSizes[1]);
     //glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo[0]);
     //glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo[0]);
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo[0], uboSizes[0], uboSizes[1]);
+    //glBindBufferRange(GL_UNIFORM_BUFFER, 1, ubo[0], uboSizes[0], uboSizes[1]);
 }
 
 void updateUniforms()
@@ -568,13 +568,26 @@ void updateUniforms()
     glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 
     //matrices block
+    GLuint uniformBlockIndex;
+    GLsizei uniformBlockSize;
+    uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
+    glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
+                                     GL_UNIFORM_BLOCK_DATA_SIZE,
+                                     &uniformBlockSize);
+    cout << "uniformBlockSize " << uniformBlockSize << endl;
+    cout << "float " << sizeof(GLfloat) << endl;
+    cout << "uint " << sizeof(GLuint) << endl;
+    cout << "mat4 " << sizeof(glm::mat4) << endl;
+    cout << "mat4 " << sizeof(glm::mat4) << endl;
+    cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
+
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(modelingMatrix));
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(viewingMatrix));
     glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projectionMatrix));
 
     //terrainData block
-    glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0], sizeof(GLuint), &vertexCount);
-    glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0] + sizeof(GLuint), sizeof(GLfloat), &terrainSpan);
+    glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0], sizeof(GLfloat), &terrainSpan);
+    glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0] + 1 * sizeof(GLfloat), sizeof(GLuint), &vertexCount);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -613,6 +626,7 @@ void drawTerrain(size_t terrainId)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes[terrainId]));
 
+	//glDrawElementsInstanced(GL_POINTS, gFaces[terrainId].size(), GL_UNSIGNED_INT, 0, 1000*1000);
 	glDrawElementsInstanced(GL_POINTS, gFaces[terrainId].size(), GL_UNSIGNED_INT, 0, vertexCount*vertexCount);
 }
 
@@ -884,6 +898,17 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         }
     }
     
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+    {
+        vertexCount += 100;
+    }
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+    {
+        if(vertexCount > 100)
+        {
+            vertexCount -= 100;
+        }
+    }
 
 }
 

@@ -13,6 +13,30 @@ vec3 ka = vec3(0.3, 0.3, 0.3);   // ambient reflectance coefficient
 vec3 ks = vec3(0.8, 0.8, 0.8);   // specular reflectance coefficient
 vec3 lightPos = vec3(5, 5, 5);   // light position in world coordinates
 
+layout (std140, binding = 0) uniform matrices
+{
+    mat4 modelingMatrix;
+    mat4 viewingMatrix;
+    mat4 projectionMatrix;
+    float terrainSpan;
+    uint vertexCount;
+};
+//layout (std140, binding = 0) uniform matrices
+//{
+//    mat4 modelingMatrix;
+//    mat4 viewingMatrix;
+//    mat4 projectionMatrix;
+//};
+//
+//layout (std140, binding = 1) uniform terrainData
+//{
+//    float terrainSpan;
+//    uint vertexCount;
+//};
+
+//int vertexCount = 1000; 
+//float terrainSpan = 30;
+
 uniform vec3 eyePos;
 
 in vec4 fragWorldPos;
@@ -40,4 +64,12 @@ void main(void)
 
 	fragColor = vec4(diffuseColor + specularColor + ambientColor, 1);
 	//fragColor = vec4(0.1, 0.7, 0.1, 1.0f);
+    if(terrainSpan > 31){
+        fragColor = vec4(1,0,0,1);
+    }
+    if(vertexCount > 1000){
+        fragColor = vec4(0,0,1,1);
+    }
+
+    
 }

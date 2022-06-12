@@ -8,13 +8,14 @@ layout(line_strip, max_vertices = 6) out;
 //uniform mat4 projectionMatrix;
 
 
+
 layout (std140, binding = 0) uniform matrices
 {
     mat4 modelingMatrix;
     mat4 viewingMatrix;
     mat4 projectionMatrix;
-    //int vertexCount;
-    //float terrainSpan;
+    float terrainSpan;
+    uint vertexCount;
 };
 
 in VS_GS_INTERFACE
@@ -25,16 +26,6 @@ in VS_GS_INTERFACE
 out vec4 fragWorldPos;
 out vec3 fragWorldNor;
 
-//TODO make these uniform
-layout (std140, binding = 1) uniform terrainData
-{
-    //int vertexCount = 1000;
-    //float terrainSpan = 30.0f;
-    uint vertexCount; 
-    float terrainSpan;
-};
-    //int vertexCount = 1000; 
-    //float terrainSpan = 30;
 
 void main(void)
 {
@@ -43,6 +34,8 @@ void main(void)
     //row = gl_InstanceID / vertexCount;
 
     float cellSize = terrainSpan * 2 / vertexCount;
+    //cellSize = 60.f/vertexCount;
+    //cellSize = terrainSpan/1000;
 
     int i, j;
     //for(i=0; i < gl_in.length(); i++)
