@@ -56,6 +56,12 @@ glm::vec3 eyePos(0.f, 4.f, 0.f);
 glm::vec3 cameraFront(0.f, 0.f, -1.f);
 glm::vec3 cameraUp(0.f, 1.f, 0.f);
 
+glm::vec3 carPos(0.01f, 0.f, 0.01f);
+glm::vec3 carDir(0.f, 0.f, -1.f);
+
+float carSpeed = 0.f;
+float carYaw = -90;
+
 int activeProgramIndex = 0;
 int activeTerrainProgIndex = 0;
 
@@ -132,6 +138,13 @@ void initTerrain()
 
 
     numberOfObj++;
+}
+
+void printVec(glm::vec3 v)
+{
+    cout << "("  << v.x 
+         << ", " << v.y
+         << ", " << v.z;
 }
 
 bool ParseObj(const string& fileName)
@@ -727,15 +740,18 @@ void display()
 
 void setCamera()
 {
+    //return;
+    carPos += carDir * glm::dot(carDir, cameraFront) 
+                        * carSpeed * deltaTime;
     float cellSize = terrainSpan * 2/ vertexCount;
     
     glm::vec3 p0, p1, p2;
 
-    p0.x = -terrainSpan + cellSize * floor((eyePos.x + terrainSpan)/cellSize);
-    p0.z = -terrainSpan + cellSize * floor((eyePos.z + terrainSpan)/cellSize);
+    p0.x = -terrainSpan + cellSize * floor((carPos.x + terrainSpan)/cellSize);
+    p0.z = -terrainSpan + cellSize * floor((carPos.z + terrainSpan)/cellSize);
     p0.y = perlinNoise(glm::vec3(p0.x, 0.0f, p0.z)) * noiseScale;
 
-    if( (eyePos.x - p0.x)/(eyePos.z - p0.z) > 1)
+    if( (carPos.x - p0.x)/(carPos.z - p0.z) > 1)
     {
         p1.x = p0.x + cellSize;
         p1.z = p0.z + cellSize;
@@ -756,14 +772,19 @@ void setCamera()
         p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
     }
 
+    float carYawInRads = (carYaw/180) * M_PI;
+    carDir.x = cos(carYawInRads);
+    carDir.y = 0.0f;
+    carDir.z = sin(carYawInRads);
+
     glm::vec3 up = glm::normalize(glm::triangleNormal(p0, p1, p2));
-    glm::vec3 right = glm::normalize(glm::cross(cameraFront, up));
+    glm::vec3 right = glm::normalize(glm::cross(carDir, up));
     glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
 
     glm::vec2 baryPosition;
-    glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
+    //glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
     float dist;
-    glm::intersectRayTriangle(eyeCoord, glm::vec3(0,1,0),
+    glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
                               p0, p1, p2,
                               baryPosition,
                               dist);
@@ -775,7 +796,13 @@ void setCamera()
     cameraFront = gaze;                        
     cameraUp = up;
     //eyePos = up + intersection;
-    eyePos =  intersection;
+    eyePos =  intersection + up *0.5f;
+
+    cout <<         "carPos: "; printVec(carPos);
+    cout << endl << "carDir: "; printVec(carDir);   
+    cout << endl;
+    //cout << endl << "
+
 }
 
 
@@ -864,31 +891,41 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         //glShadeModel(GL_FLAT);
     }
 
-    const float cameraSpeed = 11.65f; // adjust accordingly
+    const float cameraAcceleration = 0.65f; // adjust accordingly
+    //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    //{
+    //    eyePos += cameraFront * cameraAcceleration * deltaTime;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    //{
+    //    eyePos -= cameraFront * cameraAcceleration * deltaTime;
+    //}
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        eyePos += cameraFront * cameraSpeed * deltaTime;
+        carSpeed +=  
+                         cameraAcceleration * deltaTime;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        eyePos -= cameraFront * cameraSpeed * deltaTime;
+        carSpeed -=  
+                         cameraAcceleration * deltaTime;
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        eyePos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        eyePos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-    {
-        eyePos -= glm::normalize(cameraUp) * cameraSpeed * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-    {
-        eyePos += glm::normalize(cameraUp) * cameraSpeed * deltaTime;
-    }
+    //if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    //{
+    //    eyePos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraAcceleration * deltaTime;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    //{
+    //    eyePos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraAcceleration * deltaTime;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    //{
+    //    eyePos -= glm::normalize(cameraUp) * cameraAcceleration * deltaTime;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    //{
+    //    eyePos += glm::normalize(cameraUp) * cameraAcceleration * deltaTime;
+    //}
 
     //if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
     //{
@@ -899,32 +936,32 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     //    cameraZoom += deltaTime * 3.f;
     //}
 
-    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-    {
-        pitch += 1.5f;
-        if (pitch > 89.0f)
-            pitch = 89.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-    {
-        pitch -= 1.5f;
-        if (pitch < -89.0f)
-            pitch = -89.0f;
-    }
+    //if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+    //{
+    //    pitch += 1.5f;
+    //    if (pitch > 89.0f)
+    //        pitch = 89.0f;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+    //{
+    //    pitch -= 1.5f;
+    //    if (pitch < -89.0f)
+    //        pitch = -89.0f;
+    //}
 
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-    {
-        yaw += 1.5f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-    {
-        yaw -= 1.5f;
-    }
+    //if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+    //{
+    //    yaw += 1.5f;
+    //}
+    //if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+    //{
+    //    yaw -= 1.5f;
+    //}
 
 
     ////
     //TODO this should be changed to key L
-    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
     {
         activeTerrainProgIndex = !activeTerrainProgIndex;
     }
@@ -942,11 +979,11 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         }
     }
     
-    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         vertexCount += 100;
     }
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         if(vertexCount > 100)
         {
@@ -954,16 +991,60 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         }
     }
     
-    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
     {
         noiseScale +=0.05;
         cout << "noiseScale: " << noiseScale << endl;
     }
-    else if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+    else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
     {
         noiseScale -=0.05;
         cout << "noiseScale: " << noiseScale << endl;
     }
+
+}
+
+void handleMouse(GLFWwindow* window, double xposIn, double yposIn)
+{
+
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    static bool mouseInit = true;
+    if (mouseInit)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        mouseInit = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS)
+    {
+        return;
+    }
+
+    float sensitivity = 0.1f; // change this value to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    //yaw += xoffset;
+    //pitch += yoffset;
+    carYaw += xoffset;
+
+
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    
+
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
 
 }
 
@@ -1056,6 +1137,7 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     init();
 
     glfwSetKeyCallback(window, keyboard);
+    glfwSetCursorPosCallback(window, handleMouse);
     glfwSetWindowSizeCallback(window, reshape);
 
     //TODO disable debug 
