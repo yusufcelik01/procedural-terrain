@@ -14,6 +14,7 @@ layout (std140, binding = 0) uniform matrices
     mat4 projectionMatrix;
     float terrainSpan;
     uint vertexCount;
+    float noiseScale;
 };
 
 //layout (std140, binding = 0) uniform matrices

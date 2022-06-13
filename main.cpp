@@ -49,7 +49,8 @@ float pitch = 0.0f;
 
 
 
-glm::vec3 eyePos(0.f, 4.f, 8.f);
+glm::vec3 eyePos(0.f, 4.f, 0.f);
+//glm::vec3 eyePos(0.f, 4.f, 8.f);
 glm::vec3 cameraFront(0.f, 0.f, -1.f);
 glm::vec3 cameraUp(0.f, 1.f, 0.f);
 
@@ -97,6 +98,7 @@ struct Face
 
 GLuint vertexCount = 1000;
 GLfloat terrainSpan = 30;
+GLfloat noiseScale = 2.15;
 
 vector<Vertex> gVertices[5];
 vector<Texture> gTextures[5];
@@ -568,18 +570,18 @@ void updateUniforms()
     glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 
     //matrices block
-    //GLuint uniformBlockIndex;
-    //GLsizei uniformBlockSize;
-    //uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
-    //glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
-    //                                 GL_UNIFORM_BLOCK_DATA_SIZE,
-    //                                 &uniformBlockSize);
-    //cout << "uniformBlockSize " << uniformBlockSize << endl;
-    //cout << "float " << sizeof(GLfloat) << endl;
-    //cout << "uint " << sizeof(GLuint) << endl;
-    //cout << "mat4 " << sizeof(glm::mat4) << endl;
-    //cout << "mat4 " << sizeof(glm::mat4) << endl;
-    //cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
+    GLuint uniformBlockIndex;
+    GLsizei uniformBlockSize;
+    uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
+    glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
+                                     GL_UNIFORM_BLOCK_DATA_SIZE,
+                                     &uniformBlockSize);
+    cout << "uniformBlockSize " << uniformBlockSize << endl;
+    cout << "float " << sizeof(GLfloat) << endl;
+    cout << "uint " << sizeof(GLuint) << endl;
+    cout << "mat4 " << sizeof(glm::mat4) << endl;
+    cout << "mat4 " << sizeof(glm::mat4) << endl;
+    cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
 
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(modelingMatrix));
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(viewingMatrix));
@@ -588,6 +590,7 @@ void updateUniforms()
     //terrainData block
     glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0], sizeof(GLfloat), &terrainSpan);
     glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0] + 1 * sizeof(GLfloat), sizeof(GLuint), &vertexCount);
+    glBufferSubData(GL_UNIFORM_BUFFER, uboSizes[0] + 1 * sizeof(GLfloat)+sizeof(GLuint), sizeof(GLuint), &noiseScale);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -908,6 +911,17 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
             vertexCount -= 100;
         }
+    }
+    
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+    {
+        noiseScale +=0.05;
+        cout << "noiseScale: " << noiseScale << endl;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+    {
+        noiseScale -=0.05;
+        cout << "noiseScale: " << noiseScale << endl;
     }
 
 }
