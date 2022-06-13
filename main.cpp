@@ -16,6 +16,8 @@
 #include <glm/gtc/type_ptr.hpp> 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/normal.hpp>
+#include <glm/gtx/intersect.hpp>
 
 #define BUFFER_OFFSET(i) ((char*)NULL + (i))
 
@@ -94,6 +96,9 @@ struct Face
 	}
     GLuint vIndex[3], tIndex[3], nIndex[3];
 };
+
+
+float perlinNoise(glm::vec3 texCoords);
 
 
 GLuint vertexCount = 1000;
@@ -576,12 +581,12 @@ void updateUniforms()
     glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
                                      GL_UNIFORM_BLOCK_DATA_SIZE,
                                      &uniformBlockSize);
-    cout << "uniformBlockSize " << uniformBlockSize << endl;
-    cout << "float " << sizeof(GLfloat) << endl;
-    cout << "uint " << sizeof(GLuint) << endl;
-    cout << "mat4 " << sizeof(glm::mat4) << endl;
-    cout << "mat4 " << sizeof(glm::mat4) << endl;
-    cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
+    //cout << "uniformBlockSize " << uniformBlockSize << endl;
+    //cout << "float " << sizeof(GLfloat) << endl;
+    //cout << "uint " << sizeof(GLuint) << endl;
+    //cout << "mat4 " << sizeof(glm::mat4) << endl;
+    //cout << "mat4 " << sizeof(glm::mat4) << endl;
+    //cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
 
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(modelingMatrix));
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(viewingMatrix));
@@ -720,6 +725,60 @@ void display()
 	//angle += 0.5;
 }
 
+void setCamera()
+{
+    float cellSize = terrainSpan * 2/ vertexCount;
+    
+    glm::vec3 p0, p1, p2;
+
+    p0.x = -terrainSpan + cellSize * floor((eyePos.x + terrainSpan)/cellSize);
+    p0.z = -terrainSpan + cellSize * floor((eyePos.z + terrainSpan)/cellSize);
+    p0.y = perlinNoise(glm::vec3(p0.x, 0.0f, p0.z)) * noiseScale;
+
+    if( (eyePos.x - p0.x)/(eyePos.z - p0.z) > 1)
+    {
+        p1.x = p0.x + cellSize;
+        p1.z = p0.z + cellSize;
+        p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
+
+        p2.x = p0.x;
+        p2.z = p0.z + cellSize;
+        p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
+    }
+    else
+    {
+        p1.x = p0.x + cellSize;
+        p1.z = p0.z;
+        p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
+
+        p2.x = p0.x + cellSize;
+        p2.z = p0.z + cellSize;
+        p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
+    }
+
+    glm::vec3 up = glm::normalize(glm::triangleNormal(p0, p1, p2));
+    glm::vec3 right = glm::normalize(glm::cross(cameraFront, up));
+    glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
+
+    glm::vec2 baryPosition;
+    glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
+    float dist;
+    glm::intersectRayTriangle(eyeCoord, glm::vec3(0,1,0),
+                              p0, p1, p2,
+                              baryPosition,
+                              dist);
+    glm::vec3 intersection = baryPosition.x * p0 +
+                             baryPosition.y * p1 +
+                             (1- baryPosition.x-baryPosition.y) * p2;
+
+
+    cameraFront = gaze;                        
+    cameraUp = up;
+    //eyePos = up + intersection;
+    eyePos =  intersection;
+}
+
+
 void reshape(GLFWwindow* window, int w, int h)
 {
     w = w < 1 ? 1 : w;
@@ -730,45 +789,27 @@ void reshape(GLFWwindow* window, int w, int h)
 
     glViewport(0, 0, w, h);
 
-    //glMatrixMode(GL_PROJECTION);
-    //glLoadIdentity();
-    //glOrtho(-10, 10, -10, 10, -10, 10);
-    //gluPerspective(45, 1, 1, 100);
-
 
     //handle euler angles
     float yawInRads = (yaw/180) * M_PI;
     float pitchInRads = (pitch/180) * M_PI;
 
-    glm::vec3 cameraDir;
-    cameraDir.x = cos(yawInRads) * cos(pitchInRads);
-    cameraDir.y = sin(pitchInRads);
-    cameraDir.z = sin(yawInRads) * cos(pitchInRads);
+    //glm::vec3 cameraDir;
+    //cameraDir.x = cos(yawInRads) * cos(pitchInRads);
+    //cameraDir.y = sin(pitchInRads);
+    //cameraDir.z = sin(yawInRads) * cos(pitchInRads);
 
-    cameraFront = glm::normalize(cameraDir);
+    //cameraFront = glm::normalize(cameraDir);
 
-	// Use perspective projection
 	float fovyRad = (float) (cameraZoom / 180.0) * M_PI;
     float aspectRat = (float) 1.0f;
+
 	projectionMatrix = glm::perspective(fovyRad, aspectRat, 0.01f, 100.0f);
 
-	//fovyRad = (float) (125.0 / 180.0) * M_PI;
-	//projectionMatrix = glm::perspective(fovyRad, 1.0f, 1.0f, 100.0f);
-
-	// Assume default camera position and orientation (camera is at
-	// (0, 0, 0) with looking at -z direction and its up vector pointing
-	// at +y direction)
-
-	//viewingMatrix = glm::mat4(1);
+    setCamera();
     viewingMatrix = glm::lookAt(eyePos,
                                 eyePos + cameraFront,
                                 glm::normalize(cameraUp));
-    //static float angle = 0.f;
-    //viewingMatrix *= glm::rotate<float>(glm::mat4(1.0), (angle), glm::vec3(0.f, 1.f, 0.f));
-
-    //glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
-    //angle += 0.05f;
 }
 //void reshape(GLFWwindow* window, int w, int h)
 //{
@@ -1029,3 +1070,93 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
 
     return 0;
 }
+
+glm::vec3 gradients[16] = {
+    glm::vec3(1, 1, 0),
+    glm::vec3(-1, 1, 0),
+    glm::vec3(1, -1, 0),
+    glm::vec3(-1, -1, 0),
+    glm::vec3(1, 0, 1),
+    glm::vec3(-1, 0, 1),
+    glm::vec3(1, 0, -1),
+    glm::vec3(-1, 0, -1),
+    glm::vec3(0, 1, 1),
+    glm::vec3(0, -1, 1),
+    glm::vec3(0, 1, -1),
+    glm::vec3(0, -1, -1),
+    glm::vec3(1, 1, 0),
+    glm::vec3(-1, 1, 0),
+    glm::vec3(0, -1, 1),
+    glm::vec3(0, -1, -1)
+};
+
+int table[16] = {
+    14, 8, 9, 7, 5, 13, 4, 0, 12, 2, 3, 11, 6, 15, 10, 1
+};
+
+GLfloat fade(GLfloat t)
+{
+    return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+glm::vec3 grad(int i, int j, int k)
+{
+    if(i < 0) i = -i;
+    if(j < 0) j = -j;
+    if(k < 0) k = -k;
+    int ind;
+    ind = table[i % 16];
+    ind = table[(j + ind) % 16];
+    ind = table[(k + ind) % 16];
+    
+    return gradients[ind];
+}
+
+
+float perlinNoise(glm::vec3 texCoords)
+{
+    using glm::mix, glm::dot, glm::floor;
+
+    int i = int(floor(texCoords.x)) & 255,
+        j = int(floor(texCoords.y)) & 255,
+        k = int(floor(texCoords.z)) & 255;
+
+    float x = texCoords.x - floor(texCoords.x),
+          y = texCoords.y - floor(texCoords.y),
+          z = texCoords.z - floor(texCoords.z);
+    
+    float u = fade(x),
+          v = fade(y),
+          w = fade(z);
+
+    glm::vec3 g000 = grad(i  , j  , k  ),
+                     g100 = grad(i+1, j  , k  ),
+                     g110 = grad(i+1, j+1, k  ),
+                     g010 = grad(i  , j+1, k  ),
+                     g011 = grad(i  , j+1, k+1),
+                     g111 = grad(i+1, j+1, k+1),
+                     g101 = grad(i+1, j  , k+1),
+                     g001 = grad(i  , j  , k+1);
+
+    glm::vec3 p000 = glm::vec3(x  , y  , z  ),
+                     p100 = glm::vec3(x-1, y  , z  ), 
+                     p110 = glm::vec3(x-1, y-1, z  ), 
+                     p010 = glm::vec3(x  , y-1, z  ),
+                     p011 = glm::vec3(x  , y-1, z-1), 
+                     p111 = glm::vec3(x-1, y-1, z-1), 
+                     p101 = glm::vec3(x-1, y  , z-1),
+                     p001 = glm::vec3(x  , y  , z-1); 
+
+
+    GLfloat c; 
+    c = mix(mix(mix(dot(g000, p000), dot(g100, p100), u),
+                mix(dot(g010, p010), dot(g110, p110), u), v),
+
+            mix(mix(dot(g001, p001), dot(g101, p101), u),
+                mix(dot(g011, p011), dot(g111, p111), u), v), w);
+
+
+
+    return (c+1)/2.0f;
+}
+
