@@ -568,18 +568,18 @@ void updateUniforms()
     glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 
     //matrices block
-    GLuint uniformBlockIndex;
-    GLsizei uniformBlockSize;
-    uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
-    glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
-                                     GL_UNIFORM_BLOCK_DATA_SIZE,
-                                     &uniformBlockSize);
-    cout << "uniformBlockSize " << uniformBlockSize << endl;
-    cout << "float " << sizeof(GLfloat) << endl;
-    cout << "uint " << sizeof(GLuint) << endl;
-    cout << "mat4 " << sizeof(glm::mat4) << endl;
-    cout << "mat4 " << sizeof(glm::mat4) << endl;
-    cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
+    //GLuint uniformBlockIndex;
+    //GLsizei uniformBlockSize;
+    //uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
+    //glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
+    //                                 GL_UNIFORM_BLOCK_DATA_SIZE,
+    //                                 &uniformBlockSize);
+    //cout << "uniformBlockSize " << uniformBlockSize << endl;
+    //cout << "float " << sizeof(GLfloat) << endl;
+    //cout << "uint " << sizeof(GLuint) << endl;
+    //cout << "mat4 " << sizeof(glm::mat4) << endl;
+    //cout << "mat4 " << sizeof(glm::mat4) << endl;
+    //cout << "ubosizes " << uboSizes[0] + uboSizes[1] << endl;
 
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(modelingMatrix));
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(viewingMatrix));
