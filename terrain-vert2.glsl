@@ -60,7 +60,7 @@ void main(void)
 
     vs_out.pointWorldCoord = vec4( -terrainSpan + column * cellSize,
                                    0,
-                                   -terrainSpan + row * cellSize,
+                                   +terrainSpan - row * cellSize,
                                    1.0f );
 
 

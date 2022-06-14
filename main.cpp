@@ -63,7 +63,8 @@ float carSpeed = 0.f;
 float carYaw = -90;
 
 int activeProgramIndex = 0;
-int activeTerrainProgIndex = 0;
+int activeTerrainProgIndex = 1;
+int wireframe = 0;
 
 float deltaTime = 0.f; 
 float currentTime = 0.f;
@@ -144,7 +145,7 @@ void printVec(glm::vec3 v)
 {
     cout << "("  << v.x 
          << ", " << v.y
-         << ", " << v.z;
+         << ", " << v.z << ")";
 }
 
 bool ParseObj(const string& fileName)
@@ -740,7 +741,7 @@ void display()
 
 void setCamera()
 {
-    //return;
+    return;
     carPos += carDir * glm::dot(carDir, cameraFront) 
                         * carSpeed * deltaTime;
     float cellSize = terrainSpan * 2/ vertexCount;
@@ -751,7 +752,7 @@ void setCamera()
     p0.z = -terrainSpan + cellSize * floor((carPos.z + terrainSpan)/cellSize);
     p0.y = perlinNoise(glm::vec3(p0.x, 0.0f, p0.z)) * noiseScale;
 
-    if( (carPos.x - p0.x)/(carPos.z - p0.z) > 1)
+    if( (carPos.z - p0.z)/(carPos.x - p0.x) >= 1)
     {
         p1.x = p0.x + cellSize;
         p1.z = p0.z + cellSize;
@@ -777,14 +778,24 @@ void setCamera()
     carDir.y = 0.0f;
     carDir.z = sin(carYawInRads);
 
-    glm::vec3 up = glm::normalize(glm::triangleNormal(p0, p1, p2));
+    //glm::vec3 up = -glm::normalize(glm::cross(p0, p1, p2));
+    glm::vec3 up = -glm::normalize(glm::triangleNormal(p0, p1, p2));
     glm::vec3 right = glm::normalize(glm::cross(carDir, up));
     glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
+
+    cout << "<==========================>" << endl;
+    cout << "up: " ; printVec(up); cout << endl;
+    cout << "gaze: ";  printVec(gaze); cout << endl;
+    cout << "right: ";  printVec(right); cout << endl;
+    cout << endl;
+    
+   
 
     glm::vec2 baryPosition;
     //glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
     float dist;
-    glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
+    bool doesIntersect;
+    doesIntersect = glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
                               p0, p1, p2,
                               baryPosition,
                               dist);
@@ -798,9 +809,12 @@ void setCamera()
     //eyePos = up + intersection;
     eyePos =  intersection + up *0.5f;
 
-    cout <<         "carPos: "; printVec(carPos);
-    cout << endl << "carDir: "; printVec(carDir);   
-    cout << endl;
+    cout << "intersect << " << doesIntersect << endl;
+    cout << "carPos: "; printVec(carPos); cout << endl;
+    cout << "carDir: "; printVec(carDir); cout << endl;   
+    cout << "eyePos: "; printVec(eyePos); cout << endl;
+    cout << "eyeDir: "; printVec(cameraFront); cout<< "\n" << endl;
+
     //cout << endl << "
 
 }
@@ -891,7 +905,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         //glShadeModel(GL_FLAT);
     }
 
-    const float cameraAcceleration = 0.65f; // adjust accordingly
+    const float cameraAcceleration = 0.25f; // adjust accordingly
     //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     //{
     //    eyePos += cameraFront * cameraAcceleration * deltaTime;
@@ -902,70 +916,32 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     //}
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        carSpeed +=  
-                         cameraAcceleration * deltaTime;
+        carSpeed += cameraAcceleration * deltaTime;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        carSpeed -=  
-                         cameraAcceleration * deltaTime;
+        carSpeed -= cameraAcceleration * deltaTime;
     }
-    //if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    //{
-    //    eyePos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraAcceleration * deltaTime;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    //{
-    //    eyePos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraAcceleration * deltaTime;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-    //{
-    //    eyePos -= glm::normalize(cameraUp) * cameraAcceleration * deltaTime;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-    //{
-    //    eyePos += glm::normalize(cameraUp) * cameraAcceleration * deltaTime;
-    //}
-
-    //if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
-    //{
-    //    cameraZoom -= deltaTime * 3.f;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
-    //{
-    //    cameraZoom += deltaTime * 3.f;
-    //}
-
-    //if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-    //{
-    //    pitch += 1.5f;
-    //    if (pitch > 89.0f)
-    //        pitch = 89.0f;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-    //{
-    //    pitch -= 1.5f;
-    //    if (pitch < -89.0f)
-    //        pitch = -89.0f;
-    //}
-
-    //if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-    //{
-    //    yaw += 1.5f;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-    //{
-    //    yaw -= 1.5f;
-    //}
-
-
-    ////
     //TODO this should be changed to key L
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
     {
-        activeTerrainProgIndex = !activeTerrainProgIndex;
+        //activeTerrainProgIndex = !activeTerrainProgIndex;
+        if(wireframe)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            wireframe = 0;
+        }
+        else
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            wireframe = 1;
+        }
     }
 
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+    {
+        activeTerrainProgIndex = !activeTerrainProgIndex;
+    }
 
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
     {

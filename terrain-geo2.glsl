@@ -1,7 +1,7 @@
 #version 460 core
 
 layout( points ) in;
-layout(line_strip, max_vertices = 6) out;
+layout(triangle_strip, max_vertices = 6) out;
 
 layout (std140, binding = 0) uniform matrices
 {
@@ -25,13 +25,17 @@ out GS_FS_INTERFACE
 }gs_out;
 
 
-int coords[6][2] = {
-    {0, 0},
-    {1, 0},
-    {1, 1},
-    {0, 0},
-    {0, 1},
-    {1, 1}
+int coords[4][2] = {
+    {0,  0},
+    {0, -1},
+    {1,  0},
+    {1, -1},
+    //{0, 0},
+    //{1, 0},
+    //{1, 1},
+    //{0, 0},
+    //{0, 1},
+    //{1, 1}
 };
 
 vec3 gradients[16] = {
@@ -73,7 +77,7 @@ void main(void)
     int i, j, k;
     //for(i=0; i < gl_in.length(); i++)
     gs_out.fragWorldNor = vec3(0.0f, 1.f, 0.0f);
-    for(k = 0; k < 6; k++)
+    for(k = 0; k < 4; k++)
     {
         float noiseVal;
         i = coords[k][0];
@@ -83,6 +87,7 @@ void main(void)
             + j * vec4(0, 0, cellSize, 0);
 
         noiseVal = perlin3(vec3(gs_out.fragWorldPos.x, 0.f, gs_out.fragWorldPos.z));
+        //noiseVal = 0.f;
         gs_out.fragWorldPos += vec4(0,1,0,0)* noiseVal * noiseScale;
               
 
