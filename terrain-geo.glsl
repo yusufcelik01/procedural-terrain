@@ -30,12 +30,6 @@ int coords[4][2] = {
     {0,  1},
     {1,  0},
     {1,  1},
-    //{0, 0},
-    //{1, 0},
-    //{1, 1},
-    //{0, 0},
-    //{0, 1},
-    //{1, 1}
 };
 
 vec3 gradients[16] = {
@@ -66,16 +60,9 @@ float perlin3(vec3 texCoords);
 
 void main(void)
 {
-    //uint row, column;
-    //column = gl_InstanceID % vertexCount;
-    //row = gl_InstanceID / vertexCount;
-
     float cellSize = terrainSpan * 2 / vertexCount;
-    //cellSize = 60.f/vertexCount;
-    //cellSize = terrainSpan/1000;
 
     int i, j, k;
-    //for(i=0; i < gl_in.length(); i++)
     gs_out.fragWorldNor = vec3(0.0f, 1.f, 0.0f);
     for(k = 0; k < 4; k++)
     {
@@ -86,7 +73,7 @@ void main(void)
             + i * vec4(cellSize, 0, 0, 0)
             - j * vec4(0, 0, cellSize, 0);
 
-        noiseVal = perlin3(vec3(gs_out.fragWorldPos.x, 0.f, gs_out.fragWorldPos.z));
+        noiseVal = perlinNoise(vec3(gs_out.fragWorldPos.x, 0.f, gs_out.fragWorldPos.z));
         //noiseVal = 0.f;
         gs_out.fragWorldPos += vec4(0,1,0,0)* noiseVal * noiseScale;
               
@@ -98,89 +85,8 @@ void main(void)
 
 }
 
+
 float fade(float t)
-{
-    t = abs(t);
-    if (t < 1)
-        return  t * t * t * (t * (t * -6 + 15) - 10) ;
-    else
-        return 0;
-}
-
-vec2 getGradient(int i, int j)
-{
-    int idx;
-    idx = table[abs(j) % 16];
-    idx = table[abs(i + idx) % 16];
-    return gradients[idx].xy;
-}
-
-float perlinNoise(vec3 coord)
-{
-    //int x = int(floor(coord.x)) ;
-    //int y = int(floor(coord.z)) ;
-
-    //float dx = coord.x - x;
-    //float dy = coord.z - y;
-
-    //float u = fade(dx);
-    //float v = fade(dy);
-
-    ////float BL = fade(dx) * fade(dy) * dot(getGradient(x  , y  ), vec2(dx  , dy  )),
-    ////      BR = fade(dx-1) * fade(dy) * dot(getGradient(x+1, y  ), vec2(dx-1, dy  )),
-    ////      TL = fade(dx) * fade(dy-1) * dot(getGradient(x  , y+1), vec2(dx  , dy-1)),
-    ////      TR = fade(dx-1) * fade(dy-1) * dot(getGradient(x+1, y+1), vec2(dx-1, dy-1));
-
-    //float BL =  dot(getGradient(x  , y  ), vec2(dx  , dy  )),
-    //      BR =  dot(getGradient(x+1, y  ), vec2(dx-1, dy  )),
-    //      TL =  dot(getGradient(x  , y+1), vec2(dx  , dy-1)),
-    //      TR =  dot(getGradient(x+1, y+1), vec2(dx-1, dy-1));
-    //float c = mix(mix(BL, TL, v), 
-    //              mix(BR, TR, v),
-    //                          u);
-    ////float c = BL + BR + TL +TR;
-
-    //return (c+1)/2;
-
-
-    float c, acc;
-    vec3 g, d;
-    int i, j, k;
-    float dx, dy, dz;
-    acc = 0.0f;
-    for(i = 0; i < 2; i++)
-    {
-        for(j = 0; j < 2; j++)
-        {
-            for(k = 0; k < 2; k++)
-            {
-                int I, J, K;
-                int idx;
-                I = int((coord.x)) + i;
-                J = int((coord.y)) + j;
-                K = int((coord.z)) + k;
-
-                idx = table[abs(K) % 16];
-                idx = table[(abs(J) + idx) % 16];
-                idx = table[(abs(I) + idx) % 16];
-
-                g = gradients[idx];
-
-                dx = coord.x - I;
-                dy = coord.y - J;
-                dz = coord.z - K;
-                vec3 d = vec3(dx, dy, dz);
-                
-                c = fade(dx) * fade(dy) * fade(dz) * dot(g, d);
-                acc += c;
-            }
-        }
-    }
-    return (acc+1)/2.0f;
-    return abs(acc);
-}
-
-float fade3(float t)
 {
     return t * t * t * (t * (t * 6 - 15) + 10);
 }
@@ -199,7 +105,7 @@ vec3 grad(int i, int j, int k)
 }
 
 
-float perlin3(vec3 texCoords)
+float perlinNoise(vec3 texCoords)
 {
     int i = int(floor(texCoords.x)) & 255,
         j = int(floor(texCoords.y)) & 255,
@@ -209,9 +115,9 @@ float perlin3(vec3 texCoords)
           y = texCoords.y - floor(texCoords.y),
           z = texCoords.z - floor(texCoords.z);
     
-    float u = fade3(x),
-          v = fade3(y),
-          w = fade3(z);
+    float u = fade(x),
+          v = fade(y),
+          w = fade(z);
 
     vec3 g000 = grad(i  , j  , k  ),
          g100 = grad(i+1, j  , k  ),

@@ -22,21 +22,6 @@ layout (std140, binding = 0) uniform matrices
     uint vertexCount;
     float noiseScale;
 };
-//layout (std140, binding = 0) uniform matrices
-//{
-//    mat4 modelingMatrix;
-//    mat4 viewingMatrix;
-//    mat4 projectionMatrix;
-//};
-//
-//layout (std140, binding = 1) uniform terrainData
-//{
-//    float terrainSpan;
-//    uint vertexCount;
-//};
-
-//int vertexCount = 1000; 
-//float terrainSpan = 30;
 
 uniform vec3 eyePos;
 
@@ -326,7 +311,7 @@ void main(void)
 	vec3 ambientColor = Iamb * ka;
 
 	fragColor = vec4(diffuseColor + specularColor + ambientColor, 1);
-	//fragColor = vec4(0.1, 0.7, 0.1, 1.0f);
+    
     if(terrainSpan > 31){
         fragColor = vec4(1,0,0,1);
     }
@@ -334,21 +319,11 @@ void main(void)
         fragColor = vec4(0,0,1,1);
     }
 
-    float test = abs(noiseScale)/10;
-    fragColor = vec4(mix(1,0,test), mix(0,1,test), 0, 1);
+    //float test = abs(noiseScale)/10;
+    //fragColor = vec4(mix(1,0,test), mix(0,1,test), 0, 1);
 
-    float vertexHeight = fs_in.fragWorldPos.y * 165.0f;
-    //float vertexHeight = fs_in.fragWorldPos.y * 115.0f;
-    if(vertexHeight > 255){ vertexHeight = 255.01;} 
-    if(vertexHeight < 0){ vertexHeight = 0.01;} 
+    float vertexHeight = fs_in.fragWorldPos.y * 155.0f;
+    if( vertexHeight > 255) vertexHeight = 255;
+    if( vertexHeight < 0) vertexHeight = 0;
     fragColor = vec4(rainbow[int(floor(vertexHeight))], 1.0f) ;
-
-    //if(fs_in.fragWorldPos.x > 0){
-    //    fragColor.r +=0.5;
-    //}
-    //if(fs_in.fragWorldPos.z > 0){
-    //    //fragColor.g +=0.5;
-    //}
-
-    
 }
