@@ -21,6 +21,7 @@
 
 #define BUFFER_OFFSET(i) ((char*)NULL + (i))
 #define EPSILON 1e-3
+#define CAR_STOP_TRESHOLD 0.008
 
 using namespace std;
 
@@ -64,7 +65,7 @@ float carSpeed = 0.f;
 float carYaw = -90;
 
 int activeProgramIndex = 0;
-int activeTerrainProgIndex = 1;
+int activeTerrainProgIndex = 0;
 int wireframe = 0;
 
 float deltaTime = 0.f; 
@@ -111,7 +112,7 @@ float perlinNoise(glm::vec3 texCoords);
 
 GLuint vertexCount = 1000;
 GLfloat terrainSpan = 30;
-GLfloat noiseScale = 2.15;
+GLfloat noiseScale = 1.20;
 
 vector<Vertex> gVertices[5];
 vector<Texture> gTextures[5];
@@ -356,7 +357,7 @@ void initTerrainShaders()
 
     
     terrainPrograms[0] = glCreateProgram();
-    terrainPrograms[1] = glCreateProgram();
+    //terrainPrograms[1] = glCreateProgram();
     //gProgram[numberOfTerrainProg] = glCreateProgram();
 
 	// Create the shaders for both programs
@@ -365,23 +366,10 @@ void initTerrainShaders()
     GLuint fs1 = createFS("terrain-frag.glsl");
     GLuint gs1 = createGS("terrain-geo.glsl");
 
-    GLuint vs2 = createVS("terrain-vert2.glsl");
-    GLuint fs2 = createFS("terrain-frag2.glsl");
-    GLuint gs2 = createGS("terrain-geo2.glsl");
-
 	glAttachShader(terrainPrograms[0], vs1);
 	glAttachShader(terrainPrograms[0], fs1);
 	glAttachShader(terrainPrograms[0], gs1);
 
-	glAttachShader(terrainPrograms[1], vs2);
-	glAttachShader(terrainPrograms[1], fs2);
-	glAttachShader(terrainPrograms[1], gs2);
-
-	//glAttachShader(gProgram[1], vs2);
-	//glAttachShader(gProgram[1], fs2);
-	//glAttachShader(gProgram[1], gs2);
-
-    //cout << glGetError() << endl;
 
 	// Link the programs
     glLinkProgram(terrainPrograms[0]);
@@ -394,35 +382,7 @@ void initTerrainShaders()
 		exit(-1);
 	}
 
-    glLinkProgram(terrainPrograms[1]);
-	glGetProgramiv(terrainPrograms[1], GL_LINK_STATUS, &status);
-
-	if (status != GL_TRUE)
-	{
-		cout << "terrain program 2 link failed" << endl;
-		exit(-1);
-	}
-
-	//glLinkProgram(gProgram[1]);
-	//glGetProgramiv(gProgram[1], GL_LINK_STATUS, &status);
-
-	//if (status != GL_TRUE)
-	//{
-	//	cout << "Program link failed" << endl;
-	//	exit(-1);
-	//}
-
-	// Get the locations of the uniform variables from both programs
-
-	//for (int i = 0; i < 1; ++i)
-	//{
-	//	modelingMatrixLoc[i] = glGetUniformLocation(gProgram[i], "modelingMatrix");
-	//	viewingMatrixLoc[i] = glGetUniformLocation(gProgram[i], "viewingMatrix");
-	//	projectionMatrixLoc[i] = glGetUniformLocation(gProgram[i], "projectionMatrix");
-	//	eyePosLoc[i] = glGetUniformLocation(gProgram[i], "eyePos");
-	//}
-
-    numberOfTerrainProg = 2;
+    numberOfTerrainProg = 1;
 }
 
 void initShaders()
@@ -590,12 +550,14 @@ void updateUniforms()
     glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 
     //matrices block
-    GLuint uniformBlockIndex;
-    GLsizei uniformBlockSize;
-    uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[1], "matrices");
-    glGetActiveUniformBlockiv(terrainPrograms[1], uniformBlockIndex,
-                                     GL_UNIFORM_BLOCK_DATA_SIZE,
-                                     &uniformBlockSize);
+
+    //GLuint uniformBlockIndex;
+    //GLsizei uniformBlockSize;
+    //uniformBlockIndex = glGetUniformBlockIndex(terrainPrograms[0], "matrices");
+    //glGetActiveUniformBlockiv(terrainPrograms[0], uniformBlockIndex,
+    //                                 GL_UNIFORM_BLOCK_DATA_SIZE,
+    //                                 &uniformBlockSize);
+
     //cout << "uniformBlockSize " << uniformBlockSize << endl;
     //cout << "float " << sizeof(GLfloat) << endl;
     //cout << "uint " << sizeof(GLuint) << endl;
@@ -631,6 +593,8 @@ void init()
 
     initUBO();
     updateUniforms();
+
+    wireframe = 1; glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void drawTerrain(size_t terrainId)
@@ -743,8 +707,11 @@ void display()
 void setCar()
 {
     using namespace glm;
-    carPos += carDir * dot(carDir, cameraFront)
-                    * carSpeed * deltaTime;
+    if(carSpeed > CAR_STOP_TRESHOLD)
+    {
+        carPos += carDir * dot(carDir, cameraFront)
+                        * carSpeed * deltaTime;
+    }
 
     vec3 pCar, p1, p2;
     pCar = carPos;
@@ -771,97 +738,11 @@ void setCar()
     cameraFront = gaze;
     cameraUp = up;
 
-    cout << "up: "; printVec(up); cout << endl;
-    cout << "gaze: "; printVec(gaze); cout << endl;
-    cout << "right: "; printVec(right); cout << endl << endl;
+    //cout << "up: "; printVec(up); cout << endl;
+    //cout << "gaze: "; printVec(gaze); cout << endl;
+    //cout << "right: "; printVec(right); cout << endl << endl;
 }
 
-void setCamera()
-{
-    return;
-    carPos += carDir * glm::dot(carDir, cameraFront) 
-                        * carSpeed * deltaTime;
-    float cellSize = terrainSpan * 2/ vertexCount;
-    
-    glm::vec3 p0, p1, p2;
-    
-    p0.x = -terrainSpan + cellSize * floor((carPos.x + terrainSpan)/cellSize);
-    p0.z = +terrainSpan - cellSize * floor((terrainSpan - carPos.z)/cellSize);
-    p0.y = perlinNoise(glm::vec3(p0.x, 0.0f, p0.z)) * noiseScale;
-
-    if( ( p0.z - carPos.z )/(carPos.x - p0.x) >= 1)
-    {
-        //p1.x = p0.x 
-        //p1.z = p0.z 
-        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
-
-        /*TODO code below until the end of this function 
-          mismatches the code above DO NOT USE THIS function until fixed
-        */
-        //p1.x = p0.x + cellSize;
-        //p1.z = p0.z + cellSize;
-        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
-
-        //p2.x = p0.x;
-        //p2.z = p0.z + cellSize;
-        //p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
-    }
-    else
-    {
-        //p1.x = p0.x + cellSize;
-        //p1.z = p0.z;
-        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
-
-        //p2.x = p0.x + cellSize;
-        //p2.z = p0.z + cellSize;
-        //p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
-    }
-
-    //float carYawInRads = (carYaw/180) * M_PI;
-    //carDir.x = cos(carYawInRads);
-    //carDir.y = 0.0f;
-    //carDir.z = sin(carYawInRads);
-
-    ////glm::vec3 up = -glm::normalize(glm::cross(p0, p1, p2));
-    //glm::vec3 up = -glm::normalize(glm::triangleNormal(p0, p1, p2));
-    //glm::vec3 right = glm::normalize(glm::cross(carDir, up));
-    //glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
-
-    //cout << "<==========================>" << endl;
-    //cout << "up: " ; printVec(up); cout << endl;
-    //cout << "gaze: ";  printVec(gaze); cout << endl;
-    //cout << "right: ";  printVec(right); cout << endl;
-    //cout << endl;
-    //
-   
-
-    //glm::vec2 baryPosition;
-    ////glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
-    //float dist;
-    //bool doesIntersect;
-    //doesIntersect = glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
-    //                          p0, p1, p2,
-    //                          baryPosition,
-    //                          dist);
-    //glm::vec3 intersection = baryPosition.x * p0 +
-    //                         baryPosition.y * p1 +
-    //                         (1- baryPosition.x-baryPosition.y) * p2;
-
-
-    //cameraFront = gaze;                        
-    //cameraUp = up;
-    ////eyePos = up + intersection;
-    //eyePos =  intersection + up *0.5f;
-
-    //cout << "intersect << " << doesIntersect << endl;
-    //cout << "carPos: "; printVec(carPos); cout << endl;
-    //cout << "carDir: "; printVec(carDir); cout << endl;   
-    //cout << "eyePos: "; printVec(eyePos); cout << endl;
-    //cout << "eyeDir: "; printVec(cameraFront); cout<< "\n" << endl;
-
-    //cout << endl << "
-
-}
 
 
 void reshape(GLFWwindow* window, int w, int h)
@@ -934,7 +815,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     }
     else if (key == GLFW_KEY_G && action == GLFW_PRESS)
     {
-        //glShadeModel(GL_SMOOTH);
         activeProgramIndex = 0;
         //std::cout << "active program 0" << std::endl;
     }
@@ -942,22 +822,9 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         //glShadeModel(GL_SMOOTH);
         activeProgramIndex = 1;
-        //std::cout << "active program 1" << std::endl;
-    }
-    else if (key == GLFW_KEY_F && action == GLFW_PRESS)
-    {
-        //glShadeModel(GL_FLAT);
     }
 
     const float cameraAcceleration = 0.25f; // adjust accordingly
-    //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    //{
-    //    eyePos += cameraFront * cameraAcceleration * deltaTime;
-    //}
-    //if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    //{
-    //    eyePos -= cameraFront * cameraAcceleration * deltaTime;
-    //}
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         carSpeed += cameraAcceleration * deltaTime;
@@ -982,10 +849,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         }
     }
 
-    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-    {
-        activeTerrainProgIndex = !activeTerrainProgIndex;
-    }
 
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
     {
