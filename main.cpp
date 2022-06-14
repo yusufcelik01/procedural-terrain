@@ -20,6 +20,7 @@
 #include <glm/gtx/intersect.hpp>
 
 #define BUFFER_OFFSET(i) ((char*)NULL + (i))
+#define EPSILON 1e-3
 
 using namespace std;
 
@@ -739,6 +740,42 @@ void display()
 	//angle += 0.5;
 }
 
+void setCar()
+{
+    using namespace glm;
+    carPos += carDir * dot(carDir, cameraFront)
+                    * carSpeed * deltaTime;
+
+    vec3 pCar, p1, p2;
+    pCar = carPos;
+    pCar.y = perlinNoise(carPos) * noiseScale;
+
+    p1 = carPos;
+    p1.x += EPSILON;
+    p1.y  = perlinNoise(p1) * noiseScale;
+
+    p2 = carPos;
+    p2.z += EPSILON;
+    p2.y  = perlinNoise(p2) * noiseScale;
+
+    float carYawInRads = (carYaw/180) * M_PI;
+    carDir.x = cos(carYawInRads);
+    carDir.y = 0.0f;
+    carDir.z = sin(carYawInRads);
+
+    vec3 up = normalize(cross(p2 - pCar, p1 - pCar));
+    vec3 right = normalize(cross(carDir, up));
+    vec3 gaze = normalize(cross(up, right));
+
+    eyePos = pCar + vec3(0, 0.4, 0);
+    cameraFront = gaze;
+    cameraUp = up;
+
+    cout << "up: "; printVec(up); cout << endl;
+    cout << "gaze: "; printVec(gaze); cout << endl;
+    cout << "right: "; printVec(right); cout << endl << endl;
+}
+
 void setCamera()
 {
     return;
@@ -747,73 +784,80 @@ void setCamera()
     float cellSize = terrainSpan * 2/ vertexCount;
     
     glm::vec3 p0, p1, p2;
-
+    
     p0.x = -terrainSpan + cellSize * floor((carPos.x + terrainSpan)/cellSize);
-    p0.z = -terrainSpan + cellSize * floor((carPos.z + terrainSpan)/cellSize);
+    p0.z = +terrainSpan - cellSize * floor((terrainSpan - carPos.z)/cellSize);
     p0.y = perlinNoise(glm::vec3(p0.x, 0.0f, p0.z)) * noiseScale;
 
-    if( (carPos.z - p0.z)/(carPos.x - p0.x) >= 1)
+    if( ( p0.z - carPos.z )/(carPos.x - p0.x) >= 1)
     {
-        p1.x = p0.x + cellSize;
-        p1.z = p0.z + cellSize;
-        p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
+        //p1.x = p0.x 
+        //p1.z = p0.z 
+        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
 
-        p2.x = p0.x;
-        p2.z = p0.z + cellSize;
-        p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
+        /*TODO code below until the end of this function 
+          mismatches the code above DO NOT USE THIS function until fixed
+        */
+        //p1.x = p0.x + cellSize;
+        //p1.z = p0.z + cellSize;
+        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
+
+        //p2.x = p0.x;
+        //p2.z = p0.z + cellSize;
+        //p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
     }
     else
     {
-        p1.x = p0.x + cellSize;
-        p1.z = p0.z;
-        p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
+        //p1.x = p0.x + cellSize;
+        //p1.z = p0.z;
+        //p1.y = perlinNoise(glm::vec3(p1.x, 0.f, p1.z)) * noiseScale;
 
-        p2.x = p0.x + cellSize;
-        p2.z = p0.z + cellSize;
-        p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
+        //p2.x = p0.x + cellSize;
+        //p2.z = p0.z + cellSize;
+        //p2.y = perlinNoise(glm::vec3(p2.x, 0.f, p2.z)) * noiseScale;
     }
 
-    float carYawInRads = (carYaw/180) * M_PI;
-    carDir.x = cos(carYawInRads);
-    carDir.y = 0.0f;
-    carDir.z = sin(carYawInRads);
+    //float carYawInRads = (carYaw/180) * M_PI;
+    //carDir.x = cos(carYawInRads);
+    //carDir.y = 0.0f;
+    //carDir.z = sin(carYawInRads);
 
-    //glm::vec3 up = -glm::normalize(glm::cross(p0, p1, p2));
-    glm::vec3 up = -glm::normalize(glm::triangleNormal(p0, p1, p2));
-    glm::vec3 right = glm::normalize(glm::cross(carDir, up));
-    glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
+    ////glm::vec3 up = -glm::normalize(glm::cross(p0, p1, p2));
+    //glm::vec3 up = -glm::normalize(glm::triangleNormal(p0, p1, p2));
+    //glm::vec3 right = glm::normalize(glm::cross(carDir, up));
+    //glm::vec3 gaze = glm::normalize(glm ::cross(up, right));
 
-    cout << "<==========================>" << endl;
-    cout << "up: " ; printVec(up); cout << endl;
-    cout << "gaze: ";  printVec(gaze); cout << endl;
-    cout << "right: ";  printVec(right); cout << endl;
-    cout << endl;
-    
+    //cout << "<==========================>" << endl;
+    //cout << "up: " ; printVec(up); cout << endl;
+    //cout << "gaze: ";  printVec(gaze); cout << endl;
+    //cout << "right: ";  printVec(right); cout << endl;
+    //cout << endl;
+    //
    
 
-    glm::vec2 baryPosition;
-    //glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
-    float dist;
-    bool doesIntersect;
-    doesIntersect = glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
-                              p0, p1, p2,
-                              baryPosition,
-                              dist);
-    glm::vec3 intersection = baryPosition.x * p0 +
-                             baryPosition.y * p1 +
-                             (1- baryPosition.x-baryPosition.y) * p2;
+    //glm::vec2 baryPosition;
+    ////glm::vec3 eyeCoord = glm::vec3(eyePos.x, 0, eyePos.z);
+    //float dist;
+    //bool doesIntersect;
+    //doesIntersect = glm::intersectRayTriangle(carPos, glm::vec3(0,1,0),
+    //                          p0, p1, p2,
+    //                          baryPosition,
+    //                          dist);
+    //glm::vec3 intersection = baryPosition.x * p0 +
+    //                         baryPosition.y * p1 +
+    //                         (1- baryPosition.x-baryPosition.y) * p2;
 
 
-    cameraFront = gaze;                        
-    cameraUp = up;
-    //eyePos = up + intersection;
-    eyePos =  intersection + up *0.5f;
+    //cameraFront = gaze;                        
+    //cameraUp = up;
+    ////eyePos = up + intersection;
+    //eyePos =  intersection + up *0.5f;
 
-    cout << "intersect << " << doesIntersect << endl;
-    cout << "carPos: "; printVec(carPos); cout << endl;
-    cout << "carDir: "; printVec(carDir); cout << endl;   
-    cout << "eyePos: "; printVec(eyePos); cout << endl;
-    cout << "eyeDir: "; printVec(cameraFront); cout<< "\n" << endl;
+    //cout << "intersect << " << doesIntersect << endl;
+    //cout << "carPos: "; printVec(carPos); cout << endl;
+    //cout << "carDir: "; printVec(carDir); cout << endl;   
+    //cout << "eyePos: "; printVec(eyePos); cout << endl;
+    //cout << "eyeDir: "; printVec(cameraFront); cout<< "\n" << endl;
 
     //cout << endl << "
 
@@ -847,7 +891,7 @@ void reshape(GLFWwindow* window, int w, int h)
 
 	projectionMatrix = glm::perspective(fovyRad, aspectRat, 0.01f, 100.0f);
 
-    setCamera();
+    //setCamera();
     viewingMatrix = glm::lookAt(eyePos,
                                 eyePos + cameraFront,
                                 glm::normalize(cameraUp));
@@ -1044,6 +1088,8 @@ void mainLoop(GLFWwindow* window)
         //display();
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        setCar();
         reshape(window, width, height);
 
         updateUniforms();

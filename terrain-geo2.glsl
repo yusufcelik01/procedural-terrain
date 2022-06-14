@@ -27,9 +27,9 @@ out GS_FS_INTERFACE
 
 int coords[4][2] = {
     {0,  0},
-    {0, -1},
+    {0,  1},
     {1,  0},
-    {1, -1},
+    {1,  1},
     //{0, 0},
     //{1, 0},
     //{1, 1},
@@ -84,7 +84,7 @@ void main(void)
         j = coords[k][1];
         gs_out.fragWorldPos = gs_in[0].pointWorldCoord
             + i * vec4(cellSize, 0, 0, 0)
-            + j * vec4(0, 0, cellSize, 0);
+            - j * vec4(0, 0, cellSize, 0);
 
         noiseVal = perlin3(vec3(gs_out.fragWorldPos.x, 0.f, gs_out.fragWorldPos.z));
         //noiseVal = 0.f;
