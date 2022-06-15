@@ -4,5 +4,7 @@ cubemap
 *.tar
 *.tar.gz
 *.zip
+*.swp
+
 
 hw3_support_files.zip

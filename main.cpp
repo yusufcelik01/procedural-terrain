@@ -53,7 +53,7 @@ float pitch = 0.0f;
 
 
 
-glm::vec3 eyePos(0.f, 4.f, 0.f);
+glm::vec3 eyePos(0.01f, 4.f, 0.01f);
 //glm::vec3 eyePos(0.f, 4.f, 8.f);
 glm::vec3 cameraFront(0.f, 0.f, -1.f);
 glm::vec3 cameraUp(0.f, 1.f, 0.f);
@@ -704,6 +704,46 @@ void display()
 	//angle += 0.5;
 }
 
+void setCamera()
+{
+    using namespace glm;
+
+    const float carHeight = 0.4;
+    vec3 pCar, p1, p2;
+    pCar = eyePos - carHeight * cameraUp;
+    pCar.y = perlinNoise(carPos) * noiseScale;
+
+    p1 = pCar;
+    p1.x += EPSILON;
+    p1.y  = perlinNoise(p1) * noiseScale;
+
+    p2 = pCar;
+    p2.z += EPSILON;
+    p2.y  = perlinNoise(p2) * noiseScale;
+
+    float carYawInRads = (carYaw/180) * M_PI;
+    carDir.x = cos(carYawInRads);
+    carDir.y = 0.0f;
+    carDir.z = sin(carYawInRads);
+
+    vec3 up = normalize(cross(p2 - pCar, p1 - pCar));
+    vec3 right = normalize(cross(cameraFront, up));
+    vec3 gaze = normalize(cross(up, right));
+
+    eyePos = pCar + up * carHeight;
+    cameraFront = gaze;
+    cameraUp = up;
+
+    //cout << "up: "; printVec(up); cout << endl;
+    //cout << "gaze: "; printVec(gaze); cout << endl;
+    //cout << "right: "; printVec(right); cout << endl << endl;
+    if(carSpeed > CAR_STOP_TRESHOLD)
+    {
+        eyePos += cameraFront //* dot(carDir, cameraFront)
+                        * carSpeed * deltaTime;
+    }
+
+}
 void setCar()
 {
     using namespace glm;
@@ -772,7 +812,6 @@ void reshape(GLFWwindow* window, int w, int h)
 
 	projectionMatrix = glm::perspective(fovyRad, aspectRat, 0.01f, 100.0f);
 
-    //setCamera();
     viewingMatrix = glm::lookAt(eyePos,
                                 eyePos + cameraFront,
                                 glm::normalize(cameraUp));
@@ -953,6 +992,7 @@ void mainLoop(GLFWwindow* window)
         glfwPollEvents();
 
         setCar();
+        //setCamera();
         reshape(window, width, height);
 
         updateUniforms();
