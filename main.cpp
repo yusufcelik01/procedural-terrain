@@ -737,7 +737,7 @@ void setCamera()
     //cout << "up: "; printVec(up); cout << endl;
     //cout << "gaze: "; printVec(gaze); cout << endl;
     //cout << "right: "; printVec(right); cout << endl << endl;
-    if(carSpeed > CAR_STOP_TRESHOLD)
+    if(abs(carSpeed) > CAR_STOP_TRESHOLD)
     {
         eyePos += cameraFront //* dot(carDir, cameraFront)
                         * carSpeed * deltaTime;
@@ -747,7 +747,7 @@ void setCamera()
 void setCar()
 {
     using namespace glm;
-    if(carSpeed > CAR_STOP_TRESHOLD)
+    if(abs(carSpeed) > CAR_STOP_TRESHOLD)
     {
         carPos += carDir * dot(carDir, cameraFront)
                         * carSpeed * deltaTime;
