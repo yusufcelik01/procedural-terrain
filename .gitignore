@@ -2,6 +2,7 @@ main
 cubemap
 *.txt
 *.tar
+*.tar.gz
 *.zip
 
 hw3_support_files.zip
