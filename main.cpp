@@ -112,7 +112,7 @@ float perlinNoise(glm::vec3 texCoords);
 
 GLuint vertexCount = 1000;
 GLfloat terrainSpan = 30;
-GLfloat noiseScale = 1.20;
+GLfloat noiseScale = 1.50;
 
 vector<Vertex> gVertices[5];
 vector<Texture> gTextures[5];
@@ -1123,6 +1123,7 @@ glm::vec3 grad(int i, int j, int k)
 float perlinNoise(glm::vec3 texCoords)
 {
     using glm::mix, glm::dot, glm::floor;
+    texCoords = float(pow(2, -1)) * texCoords;
 
     int i = int(floor(texCoords.x)) & 255,
         j = int(floor(texCoords.y)) & 255,

@@ -107,6 +107,7 @@ vec3 grad(int i, int j, int k)
 
 float perlinNoise(vec3 texCoords)
 {
+    texCoords = pow(2, -1) * texCoords;
     int i = int(floor(texCoords.x)) & 255,
         j = int(floor(texCoords.y)) & 255,
         k = int(floor(texCoords.z)) & 255;
